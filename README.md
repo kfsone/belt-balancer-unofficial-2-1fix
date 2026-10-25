@@ -17,15 +17,15 @@ mod therefore rebuilds the state from the placed entities when it is added to a 
 
 1. Disable or remove `belt-balancer-2` / `belt-balancer-3` (they are marked incompatible) and enable this mod.
 2. Load the save. Every balancer-part, and every belt, underground belt, splitter, loader and linked belt next to one,
-   on every surface (space platforms included) is registered by replaying the mod's own build logic. Up to 50 parts
-   are handled per tick, so a save with ~1000 parts finishes within about 25 ticks.
+   on every surface (space platforms included) is registered by replaying the mod's own build logic. Up to 25 parts
+   are handled per tick, so a save with ~1000 parts finishes within about 50 ticks.
 
 Not recoverable: items that were held in a balancer's internal buffer (at most two per output lane) when the old mod was
 removed.
 
 ## Developer notes
 
-* `objects/rebuild.lua` is the rebuild. It is idempotent: parts that are already tracked are skipped.
+* `objects/rebuild.lua` is the rebuild. It is idempotent: only untracked parts are queued, and every registration step is keyed, so re-running it changes nothing.
 * Remote interface `belt-balancer-unofficial`: `statistics()`, `fingerprint()` (canonical dump of the tracked state, used
   to compare a rebuilt state with a live-built one), `rebuild(sync)`, `rebuild_pending()`.
 * Console command `belt-balancer-statistics` works without a player and also writes a `[BBSTAT]` line to the log.

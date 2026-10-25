@@ -17,18 +17,21 @@ rebuild_functions = {}
 local SCAN_TYPES = { "transport-belt", "underground-belt", "linked-belt", "loader", "loader-1x1", "splitter" }
 
 -- up to this many parts are rebuilt per tick; below SYNC_LIMIT parts everything is done immediately
-local PARTS_PER_TICK = 50
-local SYNC_LIMIT = 50
+local PARTS_PER_TICK = 25
+local SYNC_LIMIT = 25
 
 ---rebuild the registration of one part and the belts around it (belts first, then the part itself)
 ---@param part LuaEntity
 local function rebuild_part(part)
-    if not part.valid or storage.parts[part.unit_number] then
+    -- No "already tracked" shortcut here: a neighbouring part's belts may have created this part through
+    -- get_or_create, which only finds plain belts/undergrounds/splitters, not loaders or linked belts. Every
+    -- registration step below is keyed and idempotent, so re-running it for a tracked part is harmless.
+    if not part.valid then
         return
     end
     local position = part.position
     local near = part.surface.find_entities_filtered {
-        area = { { position.x - 3, position.y - 3 }, { position.x + 3, position.y + 3 } },
+        area = { { position.x - 2, position.y - 2 }, { position.x + 2, position.y + 2 } },
         type = SCAN_TYPES,
     }
     for _, entity in pairs(near) do
