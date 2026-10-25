@@ -2,6 +2,7 @@ require("objects.storage")
 require("objects.balancer")
 require("objects.part")
 require("objects.belt")
+require("objects.rebuild")
 require("helper.message-handler")
 
 -- test.lua is ~2000 lines and only used by the debug commands below, so don't load it in normal games
@@ -20,6 +21,10 @@ script.on_init(function()
     storage.belts = {}
     storage.lanes = {}
     storage.events = {}
+
+    -- Added to an existing save (e.g. replacing belt-balancer-2/-3): the balancer-parts are already placed but nothing is
+    -- registered, so rebuild the state from the entities. No-op on a fresh map.
+    rebuild_functions.start()
 end)
 
 script.on_load(reregister_on_tick)
@@ -27,6 +32,9 @@ script.on_load(reregister_on_tick)
 -- If some mod is changed, check if boblogistics got added and do stuff :)
 script.on_configuration_changed(
     function(e)
+        -- catches balancer-parts that are not tracked (idempotent; does nothing when everything is registered)
+        rebuild_functions.start()
+
         ---@type ModConfigurationChangedData
         local boblogistics_changes = e.mod_changes["boblogistics"]
 
@@ -45,7 +53,8 @@ script.on_configuration_changed(
 
 
 -- Custom command to print out some statistics
-commands.add_command("belt-balancer-statistics", "", function(e)
+---@return table counts, string text
+local function collect_statistics()
     local balancer_amount = table_size(storage.balancer)
     local balancer_part_amount = table_size(storage.parts)
     local balancer_input_belt_amount = 0
@@ -68,9 +77,71 @@ commands.add_command("belt-balancer-statistics", "", function(e)
         "\nbalancer_output_belts: " .. balancer_output_belt_amount ..
         "\nbalancer_input_lanes: " .. balancer_input_lane_amount ..
         "\nbalancer_output_lanes: " .. balancer_output_lane_amount
-    game.get_player(e.player_index).print(output)
-    print(output)
+    return {
+        balancers = balancer_amount,
+        parts = balancer_part_amount,
+        input_belts = balancer_input_belt_amount,
+        output_belts = balancer_output_belt_amount,
+        input_lanes = balancer_input_lane_amount,
+        output_lanes = balancer_output_lane_amount,
+        belts = table_size(storage.belts),
+        lanes = table_size(storage.lanes),
+        rebuild_pending = storage.rebuild ~= nil,
+    }, output
+end
+
+commands.add_command("belt-balancer-statistics", "", function(e)
+    local _, output = collect_statistics()
+    local player = e.player_index and game.get_player(e.player_index)
+    if player then
+        player.print(output)
+    end
+    log("[BBSTAT] " .. output:gsub("\n", " "))
 end)
+
+-- remote interface for scripts / test mods (no player needed)
+remote.add_interface("belt-balancer-unofficial", {
+    ---@return table counts
+    statistics = function()
+        return (collect_statistics())
+    end,
+    ---queue (or with sync = true: immediately run) the state rebuild for untracked balancer-parts
+    ---@param sync boolean|nil
+    ---@return uint untracked parts found
+    rebuild = function(sync)
+        return rebuild_functions.start(sync)
+    end,
+    ---canonical, unit-number-free description of the whole tracked state (sorted lines), used to compare a
+    ---rebuilt state with a live-built one
+    ---@return string[]
+    fingerprint = function()
+        local lines = {}
+        for _, part in pairs(storage.parts) do
+            local e = part.entity
+            if e.valid then
+                local balancer = storage.balancer[part.balancer]
+                lines[#lines + 1] = string.format("P %s %.1f,%.1f in=%d out=%d lin=%d lout=%d bparts=%d bin=%d bout=%d nth=%d",
+                    e.surface.name, e.position.x, e.position.y, table_size(part.input_belts), table_size(part.output_belts),
+                    table_size(part.input_lanes), table_size(part.output_lanes), table_size(balancer.parts),
+                    table_size(balancer.input_lanes), table_size(balancer.output_lanes), balancer.nth_tick)
+            end
+        end
+        for _, belt in pairs(storage.belts) do
+            local e = belt.entity
+            if e.valid then
+                lines[#lines + 1] = string.format("B %s %.1f,%.1f %s dir=%d nin=%d nout=%d lanes=%d",
+                    e.surface.name, e.position.x, e.position.y, e.name, e.direction, table_size(belt.input_balancer),
+                    table_size(belt.output_balancer), table_size(belt.lanes))
+            end
+        end
+        table.sort(lines)
+        return lines
+    end,
+    ---@return boolean
+    rebuild_pending = function()
+        return rebuild_functions.pending()
+    end,
+})
 
 -- only add this command, if `debug` is available and creative-mod is activated
 -- `debug` can be activated, when calling factorio with `--instrument-mod belt-balancer`
@@ -193,6 +264,10 @@ script.on_event({ defines.events.on_player_rotated_entity },
 )
 
 script.on_event(defines.events.on_tick, function()
+    if storage.rebuild then
+        rebuild_functions.on_tick()
+    end
+
     local unit_number = storage.next_belt_check
     local belt = storage.belts[unit_number]
 

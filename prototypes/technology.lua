@@ -4,7 +4,7 @@ data:extend {
     {
         type = "technology",
         name = "belt-balancer-1",
-        icon = "__belt-balancer-3__/graphics/icons/balancer.png",
+        icon = "__belt-balancer-Unofficial-2-1Fix__/graphics/icons/balancer.png",
         icon_size = 200,
         effects = {
             {
@@ -22,7 +22,7 @@ data:extend {
     {
         type = "technology",
         name = "belt-balancer-2",
-        icon = "__belt-balancer-3__/graphics/icons/balancer.png",
+        icon = "__belt-balancer-Unofficial-2-1Fix__/graphics/icons/balancer.png",
         icon_size = 200,
         effects = {
             {
@@ -40,7 +40,7 @@ data:extend {
     {
         type = "technology",
         name = "belt-balancer-3",
-        icon = "__belt-balancer-3__/graphics/icons/balancer.png",
+        icon = "__belt-balancer-Unofficial-2-1Fix__/graphics/icons/balancer.png",
         icon_size = 200,
         effects = {
             {
@@ -62,7 +62,7 @@ if mods["space-age"] then
         {
             type = "technology",
             name = "belt-balancer-4",
-            icon = "__belt-balancer-3__/graphics/icons/balancer.png",
+            icon = "__belt-balancer-Unofficial-2-1Fix__/graphics/icons/balancer.png",
             icon_size = 200,
             effects = {
                 {
