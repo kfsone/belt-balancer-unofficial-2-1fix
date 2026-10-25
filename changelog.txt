@@ -1,3 +1,14 @@
+Version: 2.1.0
+Date: 24.10.2026
+  Changes:
+    - Renamed to belt-balancer-Unofficial-2-1Fix ("Belt Balancer (Unofficial 2.1 Fix)") so it can be published next to the originals. Based on belt-balancer-3 1.0.2 (which is based on belt-balancer-2 2.0.9). Prototype, recipe, technology and item names are unchanged, so existing saves keep their balancer-parts and research.
+    - State rebuild: the script state (balancers, parts, belts, lanes, tick schedule) lives in the mod's private 'storage', which is empty when this mod replaces belt-balancer-2 or belt-balancer-3 in an existing save. On load the mod now re-registers every balancer-part and every belt, underground belt, splitter, loader and linked belt next to one, on every surface (including space platforms), by replaying its own build logic. Big saves are rebuilt a few parts per tick, so there is no freeze. Nothing is done on a new map or when everything is already registered.
+    - Items that were held in a balancer's internal buffer (at most two per output lane) when the old mod was removed cannot be recovered.
+    - belt-balancer-statistics no longer needs a player (it works from the server console and writes to the log). New remote interface 'belt-balancer-unofficial' (statistics, fingerprint, rebuild, rebuild_pending).
+    - Added incompatibility with belt-balancer-3 (identical prototype names).
+  Thanks:
+    - knoxfighter, archiehalliwell, IThundxr (Belt Balancer 2) and NightPablo (Belt Balancer 3).
+---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 24.10.2026
   Changes:

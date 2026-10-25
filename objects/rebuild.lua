@@ -17,8 +17,8 @@ rebuild_functions = {}
 local SCAN_TYPES = { "transport-belt", "underground-belt", "linked-belt", "loader", "loader-1x1", "splitter" }
 
 -- up to this many parts are rebuilt per tick; below SYNC_LIMIT parts everything is done immediately
-local PARTS_PER_TICK = 150
-local SYNC_LIMIT = 150
+local PARTS_PER_TICK = 50
+local SYNC_LIMIT = 50
 
 ---rebuild the registration of one part and the belts around it (belts first, then the part itself)
 ---@param part LuaEntity
